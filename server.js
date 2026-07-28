@@ -25,7 +25,13 @@ function loadData() {
   catch { return { entries: [] }; }
 }
 function saveData() {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('⚠️ 寫入資料失敗:', err.message);
+  }
 }
 let data = loadData();
 
@@ -82,6 +88,20 @@ const server = http.createServer(async (req, res) => {
   // 取得全部
   if (url === '/api/entries' && req.method === 'GET') {
     return sendJSON(res, 200, data.entries);
+  }
+
+  // 診斷端點
+  if (url === '/api/status' && req.method === 'GET') {
+    return sendJSON(res, 200, {
+      uptime: process.uptime(),
+      dataDir: DATA_DIR,
+      dataFile: DATA_FILE,
+      dataDirExists: fs.existsSync(path.dirname(DATA_FILE)),
+      dataFileExists: fs.existsSync(DATA_FILE),
+      entriesCount: data.entries.length,
+      clientsCount: clients.size,
+      env: { DATA_DIR: process.env.DATA_DIR, PORT: process.env.PORT, RAILWAY_VOLUME_MOUNT_PATH: process.env.RAILWAY_VOLUME_MOUNT_PATH }
+    });
   }
 
   // 新增

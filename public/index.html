@@ -249,10 +249,15 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }).then(r => r.json()).then(entry => {
+    }).then(r => {
+      if (!r.ok) throw new Error('伺服器錯誤 ' + r.status);
+      return r.json();
+    }).then(entry => {
       if (es.readyState !== 1) { entries.push(entry); render(); }
       ev.target.reset();
       document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+    }).catch(err => {
+      alert('新增失敗：' + err.message + '。可能是 Volume 未掛載或寫入權限問題。');
     });
   });
 
@@ -262,10 +267,14 @@
       { date: new Date().toISOString().slice(0,10), property: '金沙', customer: '陳生', rolling: 5000000, amount: 250000, note: '週末場' },
       { date: new Date().toISOString().slice(0,10), property: '新濠', customer: '李太', rolling: 3200000, amount: -80000, note: '輸碼' },
     ];
+    let ok = 0, fail = 0;
     samples.forEach(s => fetch('/api/entries', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s)
-    }));
-    alert('已新增 2 筆範例，可刪除後自行輸入。');
+    }).then(r => { if (r.ok) ok++; else fail++; }));
+    setTimeout(() => {
+      if (fail > 0) alert('新增完成：成功 ' + ok + ' 筆，失敗 ' + fail + ' 筆。\n如果失敗，可能是 Volume 未掛載或寫入權限問題。');
+      else alert('已新增 2 筆範例，可刪除後自行輸入。');
+    }, 500);
   });
 
   // 預設日期
