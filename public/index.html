@@ -3,282 +3,251 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>洗碼記帳表 · 金沙 / 新濠</title>
+<title>洗碼記帳 · 訂房管理</title>
 <style>
   :root {
-    --bg: #f5f6f8;
-    --card: #ffffff;
-    --ink: #1f2430;
-    --muted: #6b7280;
-    --line: #e5e7eb;
-    --gold: #c9a227;
-    --gold-soft: #f7efd3;
-    --blue: #2b6cb0;
-    --blue-soft: #e3eefb;
-    --red: #c0392b;
-    --green: #1f8a4c;
+    --bg: #f5f6f8; --card: #fff; --ink: #1f2430; --muted: #6b7280; --line: #e5e7eb;
+    --gold: #c9a227; --gold-soft: #f7efd3; --blue: #2b6cb0; --blue-soft: #e3eefb;
+    --red: #c0392b; --green: #1f8a4c;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    font-size: 15px;
-  }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 18px 60px; }
-  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  h1 { font-size: 22px; margin: 0; }
-  h1 .sub { color: var(--gold); font-weight: 600; }
-  .status { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: #bbb; display: inline-block; }
-  .dot.live { background: var(--green); }
+  body { margin:0; font-family: -apple-system,"PingFang TC","Microsoft JhengHei","Segoe UI",sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
+  .wrap { max-width:1200px; margin:0 auto; padding:18px 16px 60px; }
 
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
-  .card.gold { border-color: var(--gold); background: linear-gradient(180deg, var(--gold-soft), #fff); }
-  .card.blue { border-color: #b9d4f2; background: linear-gradient(180deg, var(--blue-soft), #fff); }
-  .card.total { border-color: #d4c27a; background: linear-gradient(180deg, #fff8e1, #fff); }
-  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; }
-  .card .big { font-size: 24px; font-weight: 700; letter-spacing: .3px; }
-  .card .row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 13px; color: var(--muted); }
-  .card .row b { color: var(--ink); font-weight: 600; }
-  .pos { color: var(--red); }
-  .neg { color: var(--green); }
+  header { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  h1 { font-size:20px; margin:0; }
+  .status { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#bbb; display:inline-block; }
+  .dot.live { background:var(--green); }
 
-  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 22px; }
-  .panel h2 { margin: 0 0 14px; font-size: 16px; }
-  form { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; align-items: end; }
-  .field { display: flex; flex-direction: column; gap: 5px; }
-  .field label { font-size: 12px; color: var(--muted); }
-  input, select { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; background: #fff; color: var(--ink); width: 100%; }
-  input:focus, select:focus { outline: none; border-color: var(--blue); }
-  .btn { padding: 10px 16px; border: none; border-radius: 8px; background: var(--gold); color: #2a2300; font-weight: 700; cursor: pointer; font-size: 14px; }
-  .btn:hover { filter: brightness(1.05); }
-  .btn.ghost { background: #eef0f3; color: var(--ink); }
+  /* Tab */
+  .tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--line); }
+  .tab { padding:10px 24px; cursor:pointer; border:none; background:none; font-size:15px; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-2px; transition:.15s; }
+  .tab.active { color:var(--gold); border-bottom-color:var(--gold); }
 
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
-  th { color: var(--muted); font-weight: 600; font-size: 13px; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-  .tag.gold { background: var(--gold-soft); color: #8a6d00; }
-  .tag.blue { background: var(--blue-soft); color: #1d4e80; }
-  .del { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; }
-  .empty { text-align: center; color: var(--muted); padding: 28px 0; }
-  @media (max-width: 860px) {
-    .cards { grid-template-columns: 1fr; }
+  /* Cards */
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:10px; margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .card.gold { border-color:var(--gold); background:linear-gradient(180deg,var(--gold-soft),#fff); }
+  .card.mix { border-color:#b9d4f2; background:linear-gradient(180deg,var(--blue-soft),#fff); }
+  .card h3 { margin:0 0 6px; font-size:13px; color:var(--muted); font-weight:600; }
+  .card .big { font-size:22px; font-weight:700; }
+  .card .row { display:flex; justify-content:space-between; margin-top:4px; font-size:12px; color:var(--muted); }
+  .card .row b { color:var(--ink); font-weight:600; }
+
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:18px; }
+  .panel h2 { margin:0 0 12px; font-size:15px; }
+
+  form { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; align-items:end; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size:11px; color:var(--muted); }
+  input, select { padding:7px 8px; border:1px solid var(--line); border-radius:6px; font-size:13px; background:#fff; color:var(--ink); width:100%; }
+  input:focus, select:focus { outline:none; border-color:var(--blue); }
+  .btn { padding:8px 14px; border:none; border-radius:6px; background:var(--gold); color:#2a2300; font-weight:700; cursor:pointer; font-size:13px; }
+  .btn:hover { filter:brightness(1.05); }
+  .btn.ghost { background:#eef0f3; color:var(--ink); }
+  .btn.danger { background:var(--red); color:#fff; }
+
+  /* Table */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; min-width:900px; }
+  th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); font-size:12px; }
+  th { color:var(--muted); font-weight:600; white-space:nowrap; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .tag { display:inline-block; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .tag.gold { background:var(--gold-soft); color:#8a6d00; }
+  .tag.blue { background:var(--blue-soft); color:#1d4e80; }
+  .del { background:none; border:none; color:var(--red); cursor:pointer; font-size:12px; }
+  .empty { text-align:center; color:var(--muted); padding:24px 0; }
+
+  .section { display:none; }
+  .section.show { display:block; }
+
+  @media (max-width:760px) {
     form { grid-template-columns: 1fr 1fr; }
+    .cards { grid-template-columns:1fr 1fr; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>洗碼記帳表 · <span class="sub">金沙 / 新濠</span></h1>
+    <h1>洗碼記帳 · 訂房管理</h1>
     <div class="status"><span class="dot" id="dot"></span><span id="statusText">連線中…</span></div>
   </header>
 
-  <section class="cards" id="cards">
-    <div class="card gold">
-      <h3>金沙 · 總計</h3>
-      <div class="big" id="g-roll">0</div>
-      <div class="row"><span>總洗碼</span></div>
-      <div class="row"><span>總金額</span><b id="g-amt">0</b></div>
-    </div>
-    <div class="card blue">
-      <h3>新濠 · 總計</h3>
-      <div class="big" id="m-roll">0</div>
-      <div class="row"><span>總洗碼</span></div>
-      <div class="row"><span>總金額</span><b id="m-amt">0</b></div>
-    </div>
-    <div class="card total">
-      <h3>全部合計</h3>
-      <div class="big" id="t-roll">0</div>
-      <div class="row"><span>總洗碼</span></div>
-      <div class="row"><span>總金額</span><b id="t-amt">0</b></div>
-    </div>
-  </section>
+  <div class="tabs">
+    <button class="tab active" id="tabA" onclick="switchTab('entries')">洗碼</button>
+    <button class="tab" id="tabB" onclick="switchTab('bookings')">訂房</button>
+  </div>
 
-  <section class="panel">
-    <h2>新增記錄</h2>
-    <form id="form">
-      <div class="field">
-        <label>日期</label>
-        <input type="date" id="f-date" required>
-      </div>
-      <div class="field">
-        <label>物業</label>
-        <select id="f-property">
-          <option value="金沙">金沙</option>
-          <option value="新濠">新濠</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>貴賓 / 客戶</label>
-        <input type="text" id="f-customer" placeholder="名稱">
-      </div>
-      <div class="field">
-        <label>洗碼</label>
-        <input type="number" id="f-rolling" placeholder="0" min="0" step="any">
-      </div>
-      <div class="field">
-        <label>金額</label>
-        <input type="number" id="f-amount" placeholder="0" step="any">
-      </div>
-      <div class="field">
-        <label>備註</label>
-        <input type="text" id="f-note" placeholder="選填">
-      </div>
-      <div class="field" style="grid-column: 1 / -1; display:flex; gap:10px;">
-        <button class="btn" type="submit">＋ 新增</button>
-        <button class="btn ghost" type="button" id="seedBtn">填入範例</button>
-      </div>
-    </form>
-  </section>
+  <!-- ═══ 洗碼 ═══ -->
+  <div class="section show" id="sec-entries">
+    <div class="cards" id="cards-entry">
+      <div class="card gold"><h3>金沙</h3><div class="big" id="g-roll">0</div><div class="row"><span>總洗碼 / 總金額</span><b id="g-amt">0</b></div></div>
+      <div class="card mix"><h3>新濠</h3><div class="big" id="m-roll">0</div><div class="row"><span>總洗碼 / 總金額</span><b id="m-amt">0</b></div></div>
+      <div class="card"><h3>合計</h3><div class="big" id="t-roll">0</div><div class="row"><span>總洗碼 / 總金額</span><b id="t-amt">0</b></div></div>
+    </div>
+    <div class="panel">
+      <h2>新增記錄</h2>
+      <form id="form-entry">
+        <div class="field"><label>日期</label><input type="date" id="fe-date" required></div>
+        <div class="field"><label>物業</label><select id="fe-property"><option>金沙</option><option>新濠</option></select></div>
+        <div class="field"><label>貴賓/客戶</label><input type="text" id="fe-customer" placeholder="名稱"></div>
+        <div class="field"><label>洗碼</label><input type="number" id="fe-rolling" placeholder="0" step="any"></div>
+        <div class="field"><label>金額</label><input type="number" id="fe-amount" placeholder="0" step="any"></div>
+        <div class="field"><label>備註</label><input type="text" id="fe-note" placeholder="選填"></div>
+        <div class="field" style="display:flex;gap:8px;">
+          <button class="btn" type="submit">＋新增</button>
+          <button class="btn ghost" type="button" id="seedBtn">填入範例</button>
+        </div>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>明細</h2>
+      <div class="table-wrap"><table><thead><tr>
+        <th>日期</th><th>物業</th><th>貴賓/客戶</th><th class="num">洗碼</th><th class="num">金額</th><th>備註</th><th></th>
+      </tr></thead><tbody id="rows-entry"><tr><td colspan="7" class="empty">尚無記錄</td></tr></tbody></table></div>
+    </div>
+  </div>
 
-  <section class="panel">
-    <h2>明細</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>日期</th>
-          <th>物業</th>
-          <th>貴賓 / 客戶</th>
-          <th class="num">洗碼</th>
-          <th class="num">金額</th>
-          <th>備註</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="rows">
-        <tr><td colspan="7" class="empty">尚無記錄</td></tr>
-      </tbody>
-    </table>
-  </section>
+  <!-- ═══ 訂房 ═══ -->
+  <div class="section" id="sec-bookings">
+    <div class="cards" id="cards-booking">
+      <div class="card"><h3>總筆數</h3><div class="big" id="b-count">0</div></div>
+      <div class="card gold"><h3>總房價</h3><div class="big" id="b-price">0</div></div>
+      <div class="card mix"><h3>總成本</h3><div class="big" id="b-cost">0</div></div>
+      <div class="card"><h3>總利潤</h3><div class="big" id="b-profit">0</div></div>
+      <div class="card"><h3>總轉碼</h3><div class="big" id="b-rolling">0</div></div>
+    </div>
+    <div class="panel">
+      <h2>新增訂房</h2>
+      <form id="form-booking">
+        <div class="field"><label>狀態</label><select id="fb-status"><option value="">未選</option><option>已收款</option><option>未收款</option><option>免單</option><option>取消</option><option>取消後退款</option><option>取消後退款(已退)</option><option>取消要收費(已收)</option></select></div>
+        <div class="field"><label>確認號</label><input type="text" id="fb-confirmNo"></div>
+        <div class="field"><label>代理</label><select id="fb-agent"><option value="">未選</option><option>A01</option><option>A02</option><option>A03</option><option>A05</option><option>A06</option><option>A07</option><option>A09</option><option>A10</option><option>A12</option><option>M</option><option>WW</option><option>alen</option><option>游澳門</option><option>祺達</option><option>私域訂製</option><option>紅象</option></select></div>
+        <div class="field"><label>客人</label><input type="text" id="fb-guest"></div>
+        <div class="field"><label>飯店</label><select id="fb-hotel"><option value="">未選</option><option>倫敦人</option><option>名匯</option><option>君悅</option><option>威尼斯人</option><option>巨星匯</option><option>巴黎人</option><option>御園</option><option>摩伯斯</option><option>明星匯</option><option>映星匯</option></select></div>
+        <div class="field"><label>房型</label><input type="text" id="fb-roomType"></div>
+        <div class="field"><label>入住</label><input type="date" id="fb-checkin"></div>
+        <div class="field"><label>退房</label><input type="date" id="fb-checkout"></div>
+        <div class="field"><label>晚數</label><input type="number" id="fb-nights" placeholder="0" step="any"></div>
+        <div class="field"><label>平日晚數</label><input type="number" id="fb-weekdayNights" placeholder="0" step="any"></div>
+        <div class="field"><label>週末晚數</label><input type="number" id="fb-weekendNights" placeholder="0" step="any"></div>
+        <div class="field"><label>房價</label><input type="number" id="fb-price" placeholder="0" step="any"></div>
+        <div class="field"><label>成本</label><input type="number" id="fb-cost" placeholder="0" step="any"></div>
+        <div class="field"><label>轉碼</label><input type="number" id="fb-rolling" placeholder="0" step="any"></div>
+        <div class="field"><label>利潤</label><input type="number" id="fb-profit" placeholder="0" step="any"></div>
+        <div class="field"><label>備註</label><input type="text" id="fb-note"></div>
+        <div class="field" style="display:flex;gap:8px;">
+          <button class="btn" type="submit">＋新增</button>
+        </div>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>訂房明細</h2>
+      <div class="table-wrap"><table><thead><tr>
+        <th>狀態</th><th>確認號</th><th>代理</th><th>客人</th><th>酒店</th><th>房型</th><th>入住</th><th>退房</th><th class="num">晚</th><th class="num">平日</th><th class="num">週末</th><th class="num">房價</th><th class="num">成本</th><th class="num">轉碼</th><th class="num">利潤</th><th>備註</th><th></th>
+      </tr></thead><tbody id="rows-booking"><tr><td colspan="17" class="empty">尚無記錄</td></tr></tbody></table></div>
+    </div>
+  </div>
 </div>
 
 <script>
   const fmt = (n) => (Number(n) || 0).toLocaleString('en-US');
-  let entries = [];
-  let loaded = false;
+  let entries = [], bookings = [];
+  let loadedE = false, loadedB = false;
+  let currentTab = 'entries';
 
-  // 初始載入（WebSocket 不可用時的備援）
-  fetch('/api/entries').then(r => r.json()).then(list => {
-    if (!loaded) { entries = list; loaded = true; render(); }
-  });
+  function switchTab(t) {
+    currentTab = t;
+    document.getElementById('tabA').classList.toggle('active', t==='entries');
+    document.getElementById('tabB').classList.toggle('active', t==='bookings');
+    document.getElementById('sec-entries').classList.toggle('show', t==='entries');
+    document.getElementById('sec-bookings').classList.toggle('show', t==='bookings');
+  }
 
-  // 即時同步（SSE）
-  const dot = document.getElementById('dot');
-  const statusText = document.getElementById('statusText');
+  // 初始載入（備援）
+  fetch('/api/entries').then(r=>r.json()).then(l=>{ if(!loadedE){entries=l;loadedE=true;renderE();} });
+  fetch('/api/bookings').then(r=>r.json()).then(l=>{ if(!loadedB){bookings=l;loadedB=true;renderB();} });
+
+  // SSE 即時同步
+  const dot=document.getElementById('dot'), st=document.getElementById('statusText');
   const es = new EventSource('/api/stream');
-  es.onopen = () => { dot.classList.add('live'); statusText.textContent = '即時同步中'; };
-  es.onerror = () => { dot.classList.remove('live'); statusText.textContent = '離線（僅本機）'; };
-  es.onmessage = (ev) => {
-    const msg = JSON.parse(ev.data);
-    if (msg.type === 'init') {
-      if (!loaded) { entries = msg.entries; loaded = true; render(); }
-    } else if (msg.type === 'add') {
-      if (!entries.find(e => e.id === msg.entry.id)) entries.push(msg.entry);
-      render();
-    } else if (msg.type === 'update') {
-      const i = entries.findIndex(e => e.id === msg.entry.id);
-      if (i > -1) entries[i] = msg.entry;
-      render();
-    } else if (msg.type === 'delete') {
-      entries = entries.filter(e => e.id !== msg.id);
-      render();
+  es.onopen = ()=>{ dot.classList.add('live'); st.textContent='即時同步中'; };
+  es.onerror = ()=>{ dot.classList.remove('live'); st.textContent='離線（僅本機）'; };
+  es.onmessage = (ev)=>{
+    const m = JSON.parse(ev.data);
+    if (m.type==='init'){
+      if(!loadedE){entries=m.entries;loadedE=true;renderE();}
+      if(!loadedB){bookings=m.bookings||[];loadedB=true;renderB();}
+    } else if (m.type==='add'){ if(!entries.find(e=>e.id===m.entry.id))entries.push(m.entry); renderE();
+    } else if (m.type==='update'){ const i=entries.findIndex(e=>e.id===m.entry.id); if(i>-1)entries[i]=m.entry; renderE();
+    } else if (m.type==='delete'){ entries=entries.filter(e=>e.id!==m.id); renderE();
+    } else if (m.type==='addBooking'){ if(!bookings.find(b=>b.id===m.booking.id))bookings.push(m.booking); renderB();
+    } else if (m.type==='updateBooking'){ const i=bookings.findIndex(b=>b.id===m.booking.id); if(i>-1)bookings[i]=m.booking; renderB();
+    } else if (m.type==='deleteBooking'){ bookings=bookings.filter(b=>b.id!==m.id); renderB();
     }
   };
 
-  function render() {
-    // 合計
-    const sum = (prop, key) => entries.filter(e => e.property === prop)
-      .reduce((s, e) => s + (Number(e[key]) || 0), 0);
-    const gRoll = sum('金沙', 'rolling'), gAmt = sum('金沙', 'amount');
-    const mRoll = sum('新濠', 'rolling'), mAmt = sum('新濠', 'amount');
-    document.getElementById('g-roll').textContent = fmt(gRoll);
-    document.getElementById('g-amt').textContent = fmt(gAmt);
-    document.getElementById('m-roll').textContent = fmt(mRoll);
-    document.getElementById('m-amt').textContent = fmt(mAmt);
-    document.getElementById('t-roll').textContent = fmt(gRoll + mRoll);
-    document.getElementById('t-amt').textContent = fmt(gAmt + mAmt);
-
-    // 表格
-    const tbody = document.getElementById('rows');
-    const sorted = [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.createdAt - a.createdAt);
-    if (!sorted.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">尚無記錄</td></tr>';
-      return;
-    }
-    tbody.innerHTML = sorted.map(e => `
-      <tr>
-        <td>${e.date || ''}</td>
-        <td><span class="tag ${e.property === '金沙' ? 'gold' : 'blue'}">${e.property}</span></td>
-        <td>${escapeHtml(e.customer || '')}</td>
-        <td class="num">${fmt(e.rolling)}</td>
-        <td class="num">${fmt(e.amount)}</td>
-        <td>${escapeHtml(e.note || '')}</td>
-        <td><button class="del" data-id="${e.id}">刪除</button></td>
-      </tr>`).join('');
-    tbody.querySelectorAll('.del').forEach(b => b.onclick = () => delEntry(b.dataset.id));
+  // ─── 洗碼 render ───
+  function renderE(){
+    const sum=(prop,key)=>entries.filter(e=>e.property===prop).reduce((s,e)=>s+(Number(e[key])||0),0);
+    const gR=sum('金沙','rolling'), gA=sum('金沙','amount');
+    const mR=sum('新濠','rolling'), mA=sum('新濠','amount');
+    document.getElementById('g-roll').textContent=fmt(gR);
+    document.getElementById('g-amt').textContent=fmt(gA);
+    document.getElementById('m-roll').textContent=fmt(mR);
+    document.getElementById('m-amt').textContent=fmt(mA);
+    document.getElementById('t-roll').textContent=fmt(gR+mR);
+    document.getElementById('t-amt').textContent=fmt(gA+mA);
+    const tbody=document.getElementById('rows-entry');
+    const sorted=[...entries].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt);
+    if(!sorted.length){tbody.innerHTML='<tr><td colspan="7" class="empty">尚無記錄</td></tr>';return;}
+    tbody.innerHTML=sorted.map(e=>`<tr><td>${e.date||''}</td><td><span class="tag ${e.property==='金沙'?'gold':'blue'}">${e.property}</span></td><td>${h(e.customer)}</td><td class="num">${fmt(e.rolling)}</td><td class="num">${fmt(e.amount)}</td><td>${h(e.note)}</td><td><button class="del" data-id="${e.id}">刪</button></td></tr>`).join('');
+    tbody.querySelectorAll('.del').forEach(btn=>btn.onclick=()=>delE(btn.dataset.id));
   }
 
-  function escapeHtml(s) {
-    return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // ─── 訂房 render ───
+  function renderB(){
+    const s=(key)=>bookings.reduce((s,b)=>s+(Number(b[key])||0),0);
+    document.getElementById('b-count').textContent=fmt(bookings.length);
+    document.getElementById('b-price').textContent=fmt(s('price'));
+    document.getElementById('b-cost').textContent=fmt(s('cost'));
+    document.getElementById('b-profit').textContent=fmt(s('profit'));
+    document.getElementById('b-rolling').textContent=fmt(s('rolling'));
+    const tbody=document.getElementById('rows-booking');
+    const sorted=[...bookings].sort((a,b)=>((b.checkin||'').localeCompare(a.checkin||'')||b.checkout.localeCompare(a.checkout)||b.createdAt-a.createdAt));
+    if(!sorted.length){tbody.innerHTML='<tr><td colspan="17" class="empty">尚無記錄</td></tr>';return;}
+    tbody.innerHTML=sorted.map(b=>`<tr><td>${h(b.status)}</td><td>${h(b.confirmNo)}</td><td>${h(b.agent)}</td><td>${h(b.guest)}</td><td>${h(b.hotel)}</td><td>${h(b.roomType)}</td><td>${b.checkin||''}</td><td>${b.checkout||''}</td><td class="num">${fmt(b.nights)}</td><td class="num">${fmt(b.weekdayNights)}</td><td class="num">${fmt(b.weekendNights)}</td><td class="num">${fmt(b.price)}</td><td class="num">${fmt(b.cost)}</td><td class="num">${fmt(b.rolling)}</td><td class="num">${fmt(b.profit)}</td><td>${h(b.note)}</td><td><button class="del" data-id="${b.id}">刪</button></td></tr>`).join('');
+    tbody.querySelectorAll('.del').forEach(btn=>btn.onclick=()=>delB(btn.dataset.id));
   }
 
-  function delEntry(id) {
-    if (!confirm('確定刪除這筆記錄？')) return;
-    fetch('/api/entries/' + id, { method: 'DELETE' }).then(() => {
-      if (es.readyState !== 1) { entries = entries.filter(e => e.id !== id); render(); }
-    });
-  }
+  function h(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-  document.getElementById('form').addEventListener('submit', (ev) => {
+  // ─── 洗碼 增/刪 ───
+  function delE(id){if(!confirm('確定刪除？'))return;fetch('/api/entries/'+id,{method:'DELETE'}).then(()=>{if(es.readyState!==1){entries=entries.filter(e=>e.id!==id);renderE();}});}
+  document.getElementById('form-entry').addEventListener('submit',ev=>{
     ev.preventDefault();
-    const payload = {
-      date: document.getElementById('f-date').value,
-      property: document.getElementById('f-property').value,
-      customer: document.getElementById('f-customer').value,
-      rolling: document.getElementById('f-rolling').value,
-      amount: document.getElementById('f-amount').value,
-      note: document.getElementById('f-note').value
-    };
-    fetch('/api/entries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(r => {
-      if (!r.ok) throw new Error('伺服器錯誤 ' + r.status);
-      return r.json();
-    }).then(entry => {
-      if (es.readyState !== 1) { entries.push(entry); render(); }
-      ev.target.reset();
-      document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
-    }).catch(err => {
-      alert('新增失敗：' + err.message + '。可能是 Volume 未掛載或寫入權限問題。');
-    });
+    const p={date:document.getElementById('fe-date').value,property:document.getElementById('fe-property').value,customer:document.getElementById('fe-customer').value,rolling:document.getElementById('fe-rolling').value,amount:document.getElementById('fe-amount').value,note:document.getElementById('fe-note').value};
+    fetch('/api/entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(r=>{if(!r.ok)throw new Error('伺服器錯誤 '+r.status);return r.json();}).then(entry=>{if(es.readyState!==1){entries.push(entry);renderE();}ev.target.reset();document.getElementById('fe-date').value=new Date().toISOString().slice(0,10);}).catch(err=>{alert('新增失敗：'+err.message);});
   });
-
-  // 範例資料（首次試用）
-  document.getElementById('seedBtn').addEventListener('click', () => {
-    const samples = [
-      { date: new Date().toISOString().slice(0,10), property: '金沙', customer: '陳生', rolling: 5000000, amount: 250000, note: '週末場' },
-      { date: new Date().toISOString().slice(0,10), property: '新濠', customer: '李太', rolling: 3200000, amount: -80000, note: '輸碼' },
-    ];
-    let ok = 0, fail = 0;
-    samples.forEach(s => fetch('/api/entries', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s)
-    }).then(r => { if (r.ok) ok++; else fail++; }));
-    setTimeout(() => {
-      if (fail > 0) alert('新增完成：成功 ' + ok + ' 筆，失敗 ' + fail + ' 筆。\n如果失敗，可能是 Volume 未掛載或寫入權限問題。');
-      else alert('已新增 2 筆範例，可刪除後自行輸入。');
-    }, 500);
+  document.getElementById('seedBtn').addEventListener('click',()=>{
+    const samples=[{date:new Date().toISOString().slice(0,10),property:'金沙',customer:'陳生',rolling:5000000,amount:250000,note:'週末場'},{date:new Date().toISOString().slice(0,10),property:'新濠',customer:'李太',rolling:3200000,amount:-80000,note:'輸碼'}];
+    let ok=0,fail=0;samples.forEach(s=>fetch('/api/entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)}).then(r=>{if(r.ok)ok++;else fail++;}));
+    setTimeout(()=>{alert(fail>0?'新增完成：成功'+ok+'筆，失敗'+fail+'筆':'已新增 2 筆範例');},500);
   });
+  document.getElementById('fe-date').value=new Date().toISOString().slice(0,10);
 
-  // 預設日期
-  document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+  // ─── 訂房 增/刪 ───
+  function delB(id){if(!confirm('確定刪除？'))return;fetch('/api/bookings/'+id,{method:'DELETE'}).then(()=>{if(es.readyState!==1){bookings=bookings.filter(b=>b.id!==id);renderB();}});}
+  document.getElementById('form-booking').addEventListener('submit',ev=>{
+    ev.preventDefault();
+    const p={};
+    ['status','confirmNo','agent','guest','hotel','roomType','checkin','checkout','note'].forEach(k=>p[k]=document.getElementById('fb-'+k).value);
+    ['nights','weekdayNights','weekendNights','price','cost','rolling','profit'].forEach(k=>p[k]=document.getElementById('fb-'+k).value);
+    fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(r=>{if(!r.ok)throw new Error('伺服器錯誤 '+r.status);return r.json();}).then(b=>{if(es.readyState!==1){bookings.push(b);renderB();}ev.target.reset();}).catch(err=>{alert('新增失敗：'+err.message);});
+  });
 </script>
 </body>
 </html>

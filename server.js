@@ -1,6 +1,5 @@
-// 洗碼記帳表 — 零依賴版本（僅用 Node 內建模組）
-// 即時同步改用 Server-Sent Events (SSE)，無需安裝任何套件。
-// 啟動：node server.js   →   http://localhost:3000
+// 洗碼記帳表 + 訂房管理 — 零依賴版本（僅用 Node 內建模組）
+// 即時同步用 SSE，無需安裝套件。啟動：node server.js → http://localhost:3000
 
 const http = require('http');
 const fs = require('fs');
@@ -8,7 +7,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DATA_DIR = process.env.DATA_DIR || __dirname;   // Railway 掛載 Volume 時指到此目錄以持久化
+const DATA_DIR = process.env.DATA_DIR || __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 
 const MIME = {
@@ -22,7 +21,7 @@ const MIME = {
 // ---------- 資料存取 ----------
 function loadData() {
   try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }
-  catch { return { entries: [] }; }
+  catch { return { entries: [], bookings: [] }; }
 }
 function saveData() {
   try {
@@ -34,8 +33,9 @@ function saveData() {
   }
 }
 let data = loadData();
+if (!data.bookings) data.bookings = [];
 
-// ---------- SSE 客戶端清單 ----------
+// ---------- SSE 客戶端 ----------
 const clients = new Set();
 function broadcast(msg) {
   const payload = `data: ${JSON.stringify(msg)}\n\n`;
@@ -44,9 +44,8 @@ function broadcast(msg) {
 
 // ---------- 工具 ----------
 function sendJSON(res, code, obj) {
-  const body = JSON.stringify(obj);
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(body);
+  res.end(JSON.stringify(obj));
 }
 function readBody(req) {
   return new Promise((resolve) => {
@@ -67,7 +66,7 @@ function serveStatic(req, res) {
   });
 }
 
-// ---------- 路由 ----------
+// ==================== 路由 ====================
 const server = http.createServer(async (req, res) => {
   const url = req.url.split('?')[0];
 
@@ -78,33 +77,18 @@ const server = http.createServer(async (req, res) => {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive'
     });
-    res.write(`data: ${JSON.stringify({ type: 'init', entries: data.entries })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'init', entries: data.entries, bookings: data.bookings })}\n\n`);
     clients.add(res);
     const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 25000);
     req.on('close', () => { clearInterval(ping); clients.delete(res); });
     return;
   }
 
-  // 取得全部
+  // ─── 洗碼 entries ───
   if (url === '/api/entries' && req.method === 'GET') {
     return sendJSON(res, 200, data.entries);
   }
 
-  // 診斷端點
-  if (url === '/api/status' && req.method === 'GET') {
-    return sendJSON(res, 200, {
-      uptime: process.uptime(),
-      dataDir: DATA_DIR,
-      dataFile: DATA_FILE,
-      dataDirExists: fs.existsSync(path.dirname(DATA_FILE)),
-      dataFileExists: fs.existsSync(DATA_FILE),
-      entriesCount: data.entries.length,
-      clientsCount: clients.size,
-      env: { DATA_DIR: process.env.DATA_DIR, PORT: process.env.PORT, RAILWAY_VOLUME_MOUNT_PATH: process.env.RAILWAY_VOLUME_MOUNT_PATH }
-    });
-  }
-
-  // 新增
   if (url === '/api/entries' && req.method === 'POST') {
     const e = await readBody(req);
     const entry = {
@@ -123,11 +107,47 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, entry);
   }
 
-  // 修改
-  const upd = url.match(/^\/api\/entries\/([\w-]+)$/);
-  if (upd && req.method === 'PUT') {
+  // ─── 訂房 bookings ───
+  if (url === '/api/bookings' && req.method === 'GET') {
+    return sendJSON(res, 200, data.bookings);
+  }
+
+  if (url === '/api/bookings' && req.method === 'POST') {
+    const b = await readBody(req);
+    const booking = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      status: b.status || '',
+      confirmNo: (b.confirmNo || '').toString().trim(),
+      agent: (b.agent || '').toString().trim(),
+      guest: (b.guest || '').toString().trim(),
+      hotel: (b.hotel || '').toString().trim(),
+      roomType: (b.roomType || '').toString().trim(),
+      checkin: b.checkin || '',
+      checkout: b.checkout || '',
+      nights: Number(b.nights) || 0,
+      weekdayNights: Number(b.weekdayNights) || 0,
+      weekendNights: Number(b.weekendNights) || 0,
+      price: Number(b.price) || 0,
+      cost: Number(b.cost) || 0,
+      rolling: Number(b.rolling) || 0,
+      profit: Number(b.profit) || 0,
+      note: (b.note || '').toString().trim(),
+      createdAt: Date.now()
+    };
+    data.bookings.push(booking);
+    saveData();
+    broadcast({ type: 'addBooking', booking });
+    return sendJSON(res, 200, booking);
+  }
+
+  // ─── 共用：單筆 修改/刪除 (entries & bookings) ───
+  const updEntry = url.match(/^\/api\/entries\/([\w-]+)$/);
+  const updBooking = url.match(/^\/api\/bookings\/([\w-]+)$/);
+
+  // 修改 entry
+  if (updEntry && req.method === 'PUT') {
     const e = await readBody(req);
-    const idx = data.entries.findIndex(x => x.id === upd[1]);
+    const idx = data.entries.findIndex(x => x.id === updEntry[1]);
     if (idx === -1) return sendJSON(res, 404, { error: 'not found' });
     const cur = data.entries[idx];
     data.entries[idx] = {
@@ -144,14 +164,56 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, data.entries[idx]);
   }
 
-  // 刪除
-  if (upd && req.method === 'DELETE') {
-    const idx = data.entries.findIndex(x => x.id === upd[1]);
+  // 刪除 entry
+  if (updEntry && req.method === 'DELETE') {
+    const idx = data.entries.findIndex(x => x.id === updEntry[1]);
     if (idx === -1) return sendJSON(res, 404, { error: 'not found' });
     const [removed] = data.entries.splice(idx, 1);
     saveData();
     broadcast({ type: 'delete', id: removed.id });
     return sendJSON(res, 200, { ok: true });
+  }
+
+  // 修改 booking
+  if (updBooking && req.method === 'PUT') {
+    const b = await readBody(req);
+    const idx = data.bookings.findIndex(x => x.id === updBooking[1]);
+    if (idx === -1) return sendJSON(res, 404, { error: 'not found' });
+    const cur = data.bookings[idx];
+    const numFields = ['nights','weekdayNights','weekendNights','price','cost','rolling','profit'];
+    const strFields = ['status','confirmNo','agent','guest','hotel','roomType','checkin','checkout','note'];
+    const updated = { ...cur };
+    numFields.forEach(f => { if (b[f] !== undefined) updated[f] = Number(b[f]) || 0; });
+    strFields.forEach(f => { if (b[f] !== undefined) updated[f] = b[f].toString().trim(); });
+    data.bookings[idx] = updated;
+    saveData();
+    broadcast({ type: 'updateBooking', booking: data.bookings[idx] });
+    return sendJSON(res, 200, data.bookings[idx]);
+  }
+
+  // 刪除 booking
+  if (updBooking && req.method === 'DELETE') {
+    const idx = data.bookings.findIndex(x => x.id === updBooking[1]);
+    if (idx === -1) return sendJSON(res, 404, { error: 'not found' });
+    const [removed] = data.bookings.splice(idx, 1);
+    saveData();
+    broadcast({ type: 'deleteBooking', id: removed.id });
+    return sendJSON(res, 200, { ok: true });
+  }
+
+  // 診斷端點
+  if (url === '/api/status' && req.method === 'GET') {
+    return sendJSON(res, 200, {
+      uptime: process.uptime(),
+      dataDir: DATA_DIR,
+      dataFile: DATA_FILE,
+      dataDirExists: fs.existsSync(path.dirname(DATA_FILE)),
+      dataFileExists: fs.existsSync(DATA_FILE),
+      entriesCount: data.entries.length,
+      bookingsCount: data.bookings.length,
+      clientsCount: clients.size,
+      env: { DATA_DIR: process.env.DATA_DIR, PORT: process.env.PORT, RAILWAY_VOLUME_MOUNT_PATH: process.env.RAILWAY_VOLUME_MOUNT_PATH }
+    });
   }
 
   // 其餘 → 靜態檔案
