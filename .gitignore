@@ -1,0 +1,9 @@
+# 依賴（本專案零依賴，保留慣例）
+node_modules/
+
+# 本機運行資料（部署後由 Railway Volume 持久化，勿納入版控）
+data.json
+
+# 系統雜檔
+.DS_Store
+*.log

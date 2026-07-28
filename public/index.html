@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洗碼記帳表 · 金沙 / 新濠</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --gold: #c9a227;
+    --gold-soft: #f7efd3;
+    --blue: #2b6cb0;
+    --blue-soft: #e3eefb;
+    --red: #c0392b;
+    --green: #1f8a4c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 18px 60px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  h1 { font-size: 22px; margin: 0; }
+  h1 .sub { color: var(--gold); font-weight: 600; }
+  .status { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #bbb; display: inline-block; }
+  .dot.live { background: var(--green); }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .card.gold { border-color: var(--gold); background: linear-gradient(180deg, var(--gold-soft), #fff); }
+  .card.blue { border-color: #b9d4f2; background: linear-gradient(180deg, var(--blue-soft), #fff); }
+  .card.total { border-color: #d4c27a; background: linear-gradient(180deg, #fff8e1, #fff); }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .card .big { font-size: 24px; font-weight: 700; letter-spacing: .3px; }
+  .card .row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 13px; color: var(--muted); }
+  .card .row b { color: var(--ink); font-weight: 600; }
+  .pos { color: var(--red); }
+  .neg { color: var(--green); }
+
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 22px; }
+  .panel h2 { margin: 0 0 14px; font-size: 16px; }
+  form { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; align-items: end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--muted); }
+  input, select { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; background: #fff; color: var(--ink); width: 100%; }
+  input:focus, select:focus { outline: none; border-color: var(--blue); }
+  .btn { padding: 10px 16px; border: none; border-radius: 8px; background: var(--gold); color: #2a2300; font-weight: 700; cursor: pointer; font-size: 14px; }
+  .btn:hover { filter: brightness(1.05); }
+  .btn.ghost { background: #eef0f3; color: var(--ink); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .tag.gold { background: var(--gold-soft); color: #8a6d00; }
+  .tag.blue { background: var(--blue-soft); color: #1d4e80; }
+  .del { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; }
+  .empty { text-align: center; color: var(--muted); padding: 28px 0; }
+  @media (max-width: 860px) {
+    .cards { grid-template-columns: 1fr; }
+    form { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>洗碼記帳表 · <span class="sub">金沙 / 新濠</span></h1>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusText">連線中…</span></div>
+  </header>
+
+  <section class="cards" id="cards">
+    <div class="card gold">
+      <h3>金沙 · 總計</h3>
+      <div class="big" id="g-roll">0</div>
+      <div class="row"><span>總洗碼</span></div>
+      <div class="row"><span>總金額</span><b id="g-amt">0</b></div>
+    </div>
+    <div class="card blue">
+      <h3>新濠 · 總計</h3>
+      <div class="big" id="m-roll">0</div>
+      <div class="row"><span>總洗碼</span></div>
+      <div class="row"><span>總金額</span><b id="m-amt">0</b></div>
+    </div>
+    <div class="card total">
+      <h3>全部合計</h3>
+      <div class="big" id="t-roll">0</div>
+      <div class="row"><span>總洗碼</span></div>
+      <div class="row"><span>總金額</span><b id="t-amt">0</b></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>新增記錄</h2>
+    <form id="form">
+      <div class="field">
+        <label>日期</label>
+        <input type="date" id="f-date" required>
+      </div>
+      <div class="field">
+        <label>物業</label>
+        <select id="f-property">
+          <option value="金沙">金沙</option>
+          <option value="新濠">新濠</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>貴賓 / 客戶</label>
+        <input type="text" id="f-customer" placeholder="名稱">
+      </div>
+      <div class="field">
+        <label>洗碼</label>
+        <input type="number" id="f-rolling" placeholder="0" min="0" step="any">
+      </div>
+      <div class="field">
+        <label>金額</label>
+        <input type="number" id="f-amount" placeholder="0" step="any">
+      </div>
+      <div class="field">
+        <label>備註</label>
+        <input type="text" id="f-note" placeholder="選填">
+      </div>
+      <div class="field" style="grid-column: 1 / -1; display:flex; gap:10px;">
+        <button class="btn" type="submit">＋ 新增</button>
+        <button class="btn ghost" type="button" id="seedBtn">填入範例</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>明細</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>物業</th>
+          <th>貴賓 / 客戶</th>
+          <th class="num">洗碼</th>
+          <th class="num">金額</th>
+          <th>備註</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="7" class="empty">尚無記錄</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<script>
+  const fmt = (n) => (Number(n) || 0).toLocaleString('en-US');
+  let entries = [];
+  let loaded = false;
+
+  // 初始載入（WebSocket 不可用時的備援）
+  fetch('/api/entries').then(r => r.json()).then(list => {
+    if (!loaded) { entries = list; loaded = true; render(); }
+  });
+
+  // 即時同步（SSE）
+  const dot = document.getElementById('dot');
+  const statusText = document.getElementById('statusText');
+  const es = new EventSource('/api/stream');
+  es.onopen = () => { dot.classList.add('live'); statusText.textContent = '即時同步中'; };
+  es.onerror = () => { dot.classList.remove('live'); statusText.textContent = '離線（僅本機）'; };
+  es.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'init') {
+      if (!loaded) { entries = msg.entries; loaded = true; render(); }
+    } else if (msg.type === 'add') {
+      if (!entries.find(e => e.id === msg.entry.id)) entries.push(msg.entry);
+      render();
+    } else if (msg.type === 'update') {
+      const i = entries.findIndex(e => e.id === msg.entry.id);
+      if (i > -1) entries[i] = msg.entry;
+      render();
+    } else if (msg.type === 'delete') {
+      entries = entries.filter(e => e.id !== msg.id);
+      render();
+    }
+  };
+
+  function render() {
+    // 合計
+    const sum = (prop, key) => entries.filter(e => e.property === prop)
+      .reduce((s, e) => s + (Number(e[key]) || 0), 0);
+    const gRoll = sum('金沙', 'rolling'), gAmt = sum('金沙', 'amount');
+    const mRoll = sum('新濠', 'rolling'), mAmt = sum('新濠', 'amount');
+    document.getElementById('g-roll').textContent = fmt(gRoll);
+    document.getElementById('g-amt').textContent = fmt(gAmt);
+    document.getElementById('m-roll').textContent = fmt(mRoll);
+    document.getElementById('m-amt').textContent = fmt(mAmt);
+    document.getElementById('t-roll').textContent = fmt(gRoll + mRoll);
+    document.getElementById('t-amt').textContent = fmt(gAmt + mAmt);
+
+    // 表格
+    const tbody = document.getElementById('rows');
+    const sorted = [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.createdAt - a.createdAt);
+    if (!sorted.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">尚無記錄</td></tr>';
+      return;
+    }
+    tbody.innerHTML = sorted.map(e => `
+      <tr>
+        <td>${e.date || ''}</td>
+        <td><span class="tag ${e.property === '金沙' ? 'gold' : 'blue'}">${e.property}</span></td>
+        <td>${escapeHtml(e.customer || '')}</td>
+        <td class="num">${fmt(e.rolling)}</td>
+        <td class="num">${fmt(e.amount)}</td>
+        <td>${escapeHtml(e.note || '')}</td>
+        <td><button class="del" data-id="${e.id}">刪除</button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.del').forEach(b => b.onclick = () => delEntry(b.dataset.id));
+  }
+
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function delEntry(id) {
+    if (!confirm('確定刪除這筆記錄？')) return;
+    fetch('/api/entries/' + id, { method: 'DELETE' }).then(() => {
+      if (es.readyState !== 1) { entries = entries.filter(e => e.id !== id); render(); }
+    });
+  }
+
+  document.getElementById('form').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const payload = {
+      date: document.getElementById('f-date').value,
+      property: document.getElementById('f-property').value,
+      customer: document.getElementById('f-customer').value,
+      rolling: document.getElementById('f-rolling').value,
+      amount: document.getElementById('f-amount').value,
+      note: document.getElementById('f-note').value
+    };
+    fetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json()).then(entry => {
+      if (es.readyState !== 1) { entries.push(entry); render(); }
+      ev.target.reset();
+      document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+    });
+  });
+
+  // 範例資料（首次試用）
+  document.getElementById('seedBtn').addEventListener('click', () => {
+    const samples = [
+      { date: new Date().toISOString().slice(0,10), property: '金沙', customer: '陳生', rolling: 5000000, amount: 250000, note: '週末場' },
+      { date: new Date().toISOString().slice(0,10), property: '新濠', customer: '李太', rolling: 3200000, amount: -80000, note: '輸碼' },
+    ];
+    samples.forEach(s => fetch('/api/entries', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s)
+    }));
+    alert('已新增 2 筆範例，可刪除後自行輸入。');
+  });
+
+  // 預設日期
+  document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+</script>
+</body>
+</html>

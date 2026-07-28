@@ -1,0 +1,10 @@
+{
+  "name": "macau-junket-ledger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "澳門貴賓廳洗碼記帳表（金沙 / 新濠）— 多人即時共享，零依賴",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
